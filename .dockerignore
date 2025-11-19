@@ -1,0 +1,32 @@
+# Build artifacts (will be rebuilt in container)
+/target
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment and secrets
+.env
+
+# Git
+/.git
+.gitignore
+.gitattributes
+
+# Documentation and test data
+*.md
+*.csv
+/tests
+/examples
+
+# Docker
+Dockerfile*
+.dockerignore
+docker-compose*.yml
+
+# Misc
+*.log
+.DS_Store

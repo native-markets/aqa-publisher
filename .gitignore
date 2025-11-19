@@ -1,0 +1,18 @@
+# Cargo generated
+debug
+target
+
+# Built binaries
+builds
+
+# rustfmt backup files
+**/*.rs.bk
+
+# VSCode workspace config
+.vscode
+
+# Environment variables
+.env
+
+# OS
+.DS_Store

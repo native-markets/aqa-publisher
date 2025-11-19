@@ -1,0 +1,34 @@
+name: Unit + Integration tests (CI)
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Run unit tests (lib)
+        run: cargo test --lib
+
+      - name: Run unit tests (median_aggregator)
+        run: cargo test --test median_aggregator
+
+      - name: Run integration tests (average_computation)
+        run: cargo test --test average_computation
+
+      - name: Run integration tests (source_comparison)
+        run: cargo test --test source_comparison

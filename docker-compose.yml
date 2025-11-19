@@ -1,0 +1,35 @@
+services:
+  aqa-publisher:
+    image: aqa-publisher
+    container_name: aqa-publisher
+    restart: unless-stopped
+
+    # Environment variables
+    environment:
+      # Required: voting wallet private key
+      - PUBLISHER_PRIVATE_KEY=${PUBLISHER_PRIVATE_KEY}
+
+      # Optional parameters: logging, network selection
+      - NETWORK=${NETWORK:-mainnet}
+      - RUST_LOG=${RUST_LOG:-info}
+
+    # Alternative: Load from .env file
+    env_file:
+      - .env
+
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    # Resource limits (optional but recommended)
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 256M
