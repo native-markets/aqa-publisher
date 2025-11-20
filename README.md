@@ -10,7 +10,9 @@ Validator sidecar binary to fetch and publish [Aligned Quote Asset (AQA)](https:
 > A requirement to become an aligned quote asset is that 50% of the deployer’s offchain reserve income must flow to the Hyperliquid protocol. `aqa-publisher` enables network validators to collect and publish the reference rate used to calculate this owed income.
 
 > [!IMPORTANT]
-> The current latest release, as of November 19th, 2025, is `v1.0.0` ([GitHub tagged release](https://github.com/native-markets/aqa-publisher/releases/tag/v1.0.0)).
+> The current latest release, as of November 20th, 2025, is `v1.1.0` ([GitHub tagged release](https://github.com/native-markets/aqa-publisher/releases/tag/v1.1.0)).
+>
+> Past releases ([`v1.0.0`](https://github.com/native-markets/aqa-publisher/releases/tag/v1.0.0)) remain supported and backwards-compatible.
 
 ## Setup & Usage
 
@@ -33,6 +35,11 @@ We recommend provisioning a separate [API/Agent wallet](https://hyperliquid.gitb
 cp .env.example .env
 vim .env
 ```
+
+> [!TIP]
+> [`v1.1.0`](https://github.com/native-markets/aqa-publisher/releases/tag/v1.1.0) added support for publishing a reference rate from multiple private keys, from a single instance of `aqa-publisher`.
+>
+> To use this functionality, specify comma-separated private keys (`PUBLISHER_PRIVATE_KEY=0x...A,0x...B,0x...C`). Identical votes will be signed and submitted from each private key. Private keys are not deduplicated.
 
 ---
 
@@ -89,14 +96,16 @@ To collect the current AQA reference rate and publish to the network once:
 ./target/release/publish_once
 ```
 
-You should expect to see similar output:
+You should expect to see similar output (with a single publisher):
 
 ```bash
 [2025-11-14T15:31:32Z INFO  aqa_publisher::utils] AQA rate on 2025-11-14: 3515319
 [2025-11-14T15:31:32Z INFO  aqa_publisher::utils] Submission-formatted rate: 0.03515319
-[2025-11-14T15:31:32Z INFO  aqa_publisher::utils] Loaded publishing signer: 0x...
+[2025-11-14T15:31:32Z INFO  aqa_publisher::utils] Loaded 1 publishing signer(s)
 [2025-11-14T15:31:32Z INFO  aqa_publisher::utils] Publishing to testnet
-[2025-11-14T15:31:33Z INFO  aqa_publisher::utils] Validator vote success: Object {"type": String("default")}
+[2025-11-14T15:31:32Z INFO  aqa_publisher::utils] Submitting vote 1/1 with signer: 0x...
+[2025-11-14T15:31:33Z INFO  aqa_publisher::utils] Validator vote success for signer 0x...: Object {"type": String("default")}
+[2025-11-14T15:31:33Z INFO  aqa_publisher::utils] Vote submission complete: 1 succeeded, 0 failed
 ```
 
 This is useful to test correct environment variables and setup. During a 24-hour voting period, only your most recent vote is counted.
@@ -118,16 +127,18 @@ You should expect to see similar output while waiting for execution:
 [2025-11-14T15:32:50Z INFO  publish_daemon] Sleeping until next execution
 ```
 
-And the following output periodically when scheduled execution occurs:
+And the following output periodically when scheduled execution occurs (with a single publisher):
 
 ```bash
     --- Scheduled run at 2025-11-13 22:00:00.000000 UTC ---
 [2025-11-13 22:00:00Z INFO  publish_daemon] Local time: 2025-11-13 17:00:00.170405 -05:00
 [2025-11-13 22:00:00Z INFO  aqa_publisher::utils] AQA rate on 2025-11-13: 3515319
 [2025-11-13 22:00:00Z INFO  aqa_publisher::utils] Submission-formatted rate: 3.51531900
-[2025-11-13 22:00:00Z INFO  aqa_publisher::utils] Loaded publishing signer: 0x...
+[2025-11-13 22:00:00Z INFO  aqa_publisher::utils] Loaded 1 publishing signer(s)
 [2025-11-13 22:00:00Z INFO  aqa_publisher::utils] Publishing to testnet
-[2025-11-13 22:00:00Z INFO  aqa_publisher::utils] Validator vote success: Object {"type": String("default")}
+[2025-11-13 22:00:00Z INFO  aqa_publisher::utils] Submitting vote 1/1 with signer: 0x...
+[2025-11-13 22:00:00Z INFO  aqa_publisher::utils] Validator vote success for signer 0x...: Object {"type": String("default")}
+[2025-11-13 22:00:00Z INFO  aqa_publisher::utils] Vote submission complete: 1 succeeded, 0 failed
 [2025-11-13 22:00:00Z INFO  publish_daemon] Next execution in: 23h 59m 59s
 [2025-11-13 22:00:00Z INFO  publish_daemon] Sleeping until next execution
 ```
@@ -196,11 +207,11 @@ All public Native Markets releases are signed by this public key (`all-nm@native
 # Import public key into local keyring
 gpg --import pub_key.asc
 
-# Download v1.0.0 binary archive from GitHub release
-curl -L -o publish_daemon-macos-arm64.tar.gz https://github.com/native-markets/aqa-publisher/releases/download/v1.0.0/publish_daemon-macos-arm64.tar.gz
+# Download v1.1.0 binary archive from GitHub release
+curl -L -o publish_daemon-macos-arm64.tar.gz https://github.com/native-markets/aqa-publisher/releases/download/v1.1.0/publish_daemon-macos-arm64.tar.gz
 
-# Download v1.0.0 binary archive signature from GitHub release
-curl -L -o publish_daemon-macos-arm64.tar.gz.asc https://github.com/native-markets/aqa-publisher/releases/download/v1.0.0/publish_daemon-macos-arm64.tar.gz.asc
+# Download v1.1.0 binary archive signature from GitHub release
+curl -L -o publish_daemon-macos-arm64.tar.gz.asc https://github.com/native-markets/aqa-publisher/releases/download/v1.1.0/publish_daemon-macos-arm64.tar.gz.asc
 
 # Verify binary
 # Using macos-arm64 binary archive as example
@@ -212,7 +223,7 @@ gpg --verify \
 With a successfully verified binary archive you should expect to see:
 
 ```
-gpg: Signature made Wed Nov 19 15:07:32 2025 UTC
+gpg: Signature made Thu Nov 20 19:58:00 2025 UTC
 gpg:                using EDDSA key 0F2980DEE814C761B2016C2F3080B08C4722CF13
 gpg: Good signature from "all-nm (Native Markets release publisher) <all-nm@nativemarkets.com>" [unknown]
 gpg: WARNING: This key is not certified with a trusted signature!

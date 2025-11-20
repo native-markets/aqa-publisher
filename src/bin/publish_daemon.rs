@@ -17,7 +17,7 @@ async fn main() -> Result<()> {
     let _ = dotenvy::dotenv();
     env_logger::init();
 
-    // Check for publisher private key
+    // Check for publisher private key(s)
     if env::var("PUBLISHER_PRIVATE_KEY").is_err() {
         anyhow::bail!("PUBLISHER_PRIVATE_KEY environment variable must be set");
     }

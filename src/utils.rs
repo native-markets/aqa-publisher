@@ -1,7 +1,7 @@
 use alloy::signers::local::PrivateKeySigner;
 use anyhow::{Context, Result};
 use chrono::{NaiveDate, Utc};
-use log::{error, info};
+use log::{error, info, warn};
 use std::env;
 use tokio::time::Duration;
 
@@ -55,6 +55,32 @@ pub fn duration_until_next_execution(target_hour: u32) -> Duration {
     duration
 }
 
+/// Parse private keys from environment variable, `PUBLISHER_PRIVATE_KEY`
+fn load_signers() -> Result<Vec<PrivateKeySigner>> {
+    // Read environment variable
+    let private_keys_str = env::var("PUBLISHER_PRIVATE_KEY")
+        .context("PUBLISHER_PRIVATE_KEY environment variable must be set")?;
+
+    // Split by comma to support multiple keys
+    let key_strings: Vec<&str> = private_keys_str.split(',').map(|s| s.trim()).collect();
+
+    // Parse keys as signers
+    let mut signers = Vec::new();
+    for (idx, key_str) in key_strings.iter().enumerate() {
+        let signer: PrivateKeySigner = key_str
+            .parse()
+            .context(format!("Failed to parse private key at index {}", idx))?;
+        signers.push(signer);
+    }
+
+    // Check for at least 1 publishing key
+    if signers.is_empty() {
+        anyhow::bail!("No valid private keys found in PUBLISHER_PRIVATE_KEY");
+    }
+
+    Ok(signers)
+}
+
 /// Fetch AQA rate data without publishing
 pub async fn fetch_aqa() -> Result<(NaiveDate, u64, u64)> {
     // Run blocking HTTP calls in a separate thread pool to avoid blocking the async runtime
@@ -79,10 +105,9 @@ pub async fn fetch_and_publish_aqa() -> Result<()> {
     let rfr_rate = fmt_scaled_rate(aqa_ref_rate);
     info!("Submission-formatted rate: {}", rfr_rate);
 
-    // Load signer from environment
-    let private_key: String = env::var("PUBLISHER_PRIVATE_KEY")?;
-    let signer: PrivateKeySigner = private_key.parse()?;
-    info!("Loaded publishing signer: {}", signer.address());
+    // Load signers from environment
+    let signers = load_signers()?;
+    info!("Loaded {} publishing signer(s)", signers.len());
 
     // Determine network (default to `mainnet`)
     let is_mainnet = match env::var("NETWORK").as_deref() {
@@ -96,19 +121,58 @@ pub async fn fetch_and_publish_aqa() -> Result<()> {
         }
     };
 
-    // Setup exchange client
-    let hl_client = HyperliquidClient::new(signer, is_mainnet);
+    // Track submission results
+    let mut success_count = 0;
+    let mut failure_count = 0;
 
-    // Submit vote with rate and track response
-    let response = hl_client.submit_vote(&rfr_rate).await;
-    match response {
-        Ok(resp) => {
-            info!("Validator vote success: {:?}", resp);
+    // Submit vote for each signer
+    for (idx, signer) in signers.iter().enumerate() {
+        info!(
+            "Submitting vote {}/{} with signer: {}",
+            idx + 1,
+            signers.len(),
+            signer.address()
+        );
+
+        // Setup client
+        let hl_client = HyperliquidClient::new(signer.clone(), is_mainnet);
+
+        // Submit vote and handle response
+        let response = hl_client.submit_vote(&rfr_rate).await;
+        match response {
+            Ok(resp) => {
+                info!(
+                    "Validator vote success for signer {}: {:?}",
+                    signer.address(),
+                    resp
+                );
+                success_count += 1;
+            }
+            Err(e) => {
+                error!(
+                    "Failed to submit vote for signer {}: {}",
+                    signer.address(),
+                    e
+                );
+                failure_count += 1;
+            }
         }
-        Err(e) => {
-            error!("Failed to submit vote: {}", e);
-            anyhow::bail!("Validator vote failed: {}", e);
-        }
+    }
+
+    // Report summary
+    info!(
+        "Vote submission complete: {} succeeded, {} failed",
+        success_count, failure_count
+    );
+
+    // Fail if all submissions failed
+    if success_count == 0 {
+        anyhow::bail!("All validator votes failed");
+    }
+
+    // Warn if some submissions failed
+    if failure_count > 0 {
+        warn!("{} out of {} votes failed", failure_count, signers.len());
     }
 
     Ok(())
