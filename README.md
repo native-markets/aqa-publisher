@@ -10,9 +10,9 @@ Validator sidecar binary to fetch and publish [Aligned Quote Asset (AQA)](https:
 > A requirement to become an aligned quote asset is that 50% of the deployer’s offchain reserve income must flow to the Hyperliquid protocol. `aqa-publisher` enables network validators to collect and publish the reference rate used to calculate this owed income.
 
 > [!IMPORTANT]
-> The current latest release, as of November 20th, 2025, is `v1.1.0` ([GitHub tagged release](https://github.com/native-markets/aqa-publisher/releases/tag/v1.1.0)).
+> The current latest release, as of March 30th, 2026, is `v1.2.0` ([GitHub tagged release](https://github.com/native-markets/aqa-publisher/releases/tag/v1.2.0)).
 >
-> Past releases ([`v1.0.0`](https://github.com/native-markets/aqa-publisher/releases/tag/v1.0.0)) remain supported and backwards-compatible.
+> Releases prior to `v1.2.0` are not supported and should not be used.
 
 ## Setup & Usage
 
@@ -67,6 +67,7 @@ cargo build --release
 
 > [!TIP]
 > If building on a fresh instance, you will also need necessary linkers and build tooling. The following works for most linux distributions:
+>
 > ```bash
 > apt-get install build-essential libssl-dev pkg-config -y
 > ```
@@ -171,10 +172,13 @@ docker build -t aqa-publisher .
 
 > [!TIP]
 > If your user is not part of the docker group, you will need to either execute with elevated privileges:
+>
 > ```bash
 > sudo docker build -t aqa-publisher .
 > ```
+>
 > Or, add yourself to the `docker` group:
+>
 > ```bash
 > sudo usermod -aG docker $USER
 > ```
@@ -207,11 +211,11 @@ All public Native Markets releases are signed by this public key (`all-nm@native
 # Import public key into local keyring
 gpg --import pub_key.asc
 
-# Download v1.1.0 binary archive from GitHub release
-curl -L -o publish_daemon-macos-arm64.tar.gz https://github.com/native-markets/aqa-publisher/releases/download/v1.1.0/publish_daemon-macos-arm64.tar.gz
+# Download v1.2.0 binary archive from GitHub release
+curl -L -o publish_daemon-macos-arm64.tar.gz https://github.com/native-markets/aqa-publisher/releases/download/v1.2.0/publish_daemon-macos-arm64.tar.gz
 
-# Download v1.1.0 binary archive signature from GitHub release
-curl -L -o publish_daemon-macos-arm64.tar.gz.asc https://github.com/native-markets/aqa-publisher/releases/download/v1.1.0/publish_daemon-macos-arm64.tar.gz.asc
+# Download v1.2.0 binary archive signature from GitHub release
+curl -L -o publish_daemon-macos-arm64.tar.gz.asc https://github.com/native-markets/aqa-publisher/releases/download/v1.2.0/publish_daemon-macos-arm64.tar.gz.asc
 
 # Verify binary
 # Using macos-arm64 binary archive as example
@@ -231,7 +235,7 @@ gpg:          There is no indication that the signature belongs to the owner.
 Primary key fingerprint: 0F29 80DE E814 C761 B201  6C2F 3080 B08C 4722 CF13
 ```
 
-Verifying the valid signature from `all-nm` (you can verify fingerprint `0F29 80DE E814 C761 B201  6C2F 3080 B08C 4722 CF13` and this repo, `native-markets/aqa-publisher`, as source of truth for trusted signature belonging to owner).
+Verifying the valid signature from `all-nm` (you can verify fingerprint `0F29 80DE E814 C761 B201  6C2F 3080 B08C 4722 CF13` and this repo, `native-markets/aqa-publisher`, as source of truth for trusted signature belonging to owner). The signature timestamp should also correspond to within 24hrs prior the tagged release on GitHub.
 
 #### Executing verified binary
 

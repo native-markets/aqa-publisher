@@ -53,7 +53,7 @@ pub fn get_median_sofr_avg(date: NaiveDate) -> Result<(NaiveDate, u64)> {
             results.push((source.name(), source_date, source_value));
         }
         Err(e) => {
-            error!("{} failed: {}", source.name(), e);
+            error!("{} failed: {:#}", source.name(), e);
         }
     };
 

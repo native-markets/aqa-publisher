@@ -13,6 +13,7 @@ use std::str::FromStr;
 
 /// Default lookback for data collection window
 pub const DEFAULT_LOOKBACK_WINDOW: u64 = 14;
+const SOURCE_HTTP_USER_AGENT: &str = "curl/8.7.1";
 
 /// Common trait implemented by each API data source
 pub trait Source {
@@ -39,10 +40,17 @@ pub(crate) fn get_bytes(url: &str) -> Result<Vec<u8>> {
     const MAX_RETRIES: u32 = 3;
     const INITIAL_DELAY_SECS: u64 = 30;
 
+    let client = reqwest::blocking::Client::builder()
+        .user_agent(SOURCE_HTTP_USER_AGENT)
+        .build()
+        .context("building HTTP client")?;
+
     let mut last_error = None;
 
     for attempt in 1..=MAX_RETRIES {
-        match reqwest::blocking::get(url)
+        match client
+            .get(url)
+            .send()
             .with_context(|| format!("GET {url}"))
             .and_then(|resp| {
                 resp.error_for_status()
@@ -52,12 +60,13 @@ pub(crate) fn get_bytes(url: &str) -> Result<Vec<u8>> {
         {
             Ok(bytes) => return Ok(bytes.to_vec()),
             Err(e) => {
+                let err_msg = format!("{e:#}");
                 last_error = Some(e);
                 if attempt < MAX_RETRIES {
                     let delay_secs = INITIAL_DELAY_SECS * (2u64.pow(attempt - 1));
                     warn!(
-                        "Request to {} failed (attempt {}/{}), retrying in {}s...",
-                        url, attempt, MAX_RETRIES, delay_secs
+                        "Request to {} failed (attempt {}/{}): {:#}. Retrying in {}s...",
+                        url, attempt, MAX_RETRIES, err_msg, delay_secs
                     );
                     std::thread::sleep(std::time::Duration::from_secs(delay_secs));
                 }
